@@ -182,15 +182,23 @@ public class IOBRecorderService extends AccessibilityService {
     private void transactions() {
         AccessibilityNodeInfo transactions = findSecondTransactionsNode(getTopMostParentNode(getRootInActiveWindow()));
         if (transactions != null) {
+            checkForSessionExpiry();
             Rect outBounds = new Rect();
             transactions.getBoundsInScreen(outBounds);
             performTap(outBounds.centerX(), outBounds.centerY(), 100);
+
         }
     }
 
     private void numberOfTransaction() {
         AccessibilityNodeInfo numberOfTransaction = findOneText(getTopMostParentNode(getRootInActiveWindow()), "No. of Transaction");
         if (numberOfTransaction != null) {
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            checkForSessionExpiry();
             AccessibilityNodeInfo editTextNode = findNodeByClassName(getTopMostParentNode(getRootInActiveWindow()), "android.widget.EditText");
             if (editTextNode != null) {
                 Bundle arguments = new Bundle();
@@ -204,7 +212,6 @@ public class IOBRecorderService extends AccessibilityService {
                     View.getBoundsInScreen(outBounds);
                     performTap(outBounds.centerX(), outBounds.centerY(), 100);
                     View.recycle();
-                    isTransaction = true;
                 }
             }
         }
@@ -222,9 +229,11 @@ public class IOBRecorderService extends AccessibilityService {
                     boolean isClicked = performTap(outBounds.centerX(), outBounds.centerY(), 100);
                     if (isClicked) {
                         isTransaction = false;
+                        secondButtonNode.recycle();
                         description.recycle();
                     }
                 }
+
             }
         }
     }
@@ -341,7 +350,7 @@ public class IOBRecorderService extends AccessibilityService {
             throw new RuntimeException(e);
         }
         ticker.setNotIdle();
-
+        checkForSessionExpiry();
         JSONArray output = new JSONArray();
         List<String> allString = listAllTextsInActiveWindow(getTopMostParentNode(getRootInActiveWindow()));
         if (allString.contains("Description") && allString.contains("Date (Value Date)") && allString.contains("Balance (₹)") && allString.contains("Debit / Credit (₹)")) {
@@ -404,6 +413,11 @@ public class IOBRecorderService extends AccessibilityService {
                     new UpdateDateForScrapper().evaluate();
                 }, () -> {
                 }).evaluate();
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
                 isTransaction = true;
             }
         }
@@ -412,35 +426,13 @@ public class IOBRecorderService extends AccessibilityService {
     }
 
 
-    public static boolean isValidDate(String dateString) {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("EEEE, dd MMM yyyy", Locale.ENGLISH);
-        dateFormat.setLenient(false); // Disable leniency
-        try {
-            dateFormat.parse(dateString);
-            return true;
-        } catch (ParseException e) {
-            return false;
-        }
-    }
-
-    public static String convertDateFormat(String dateString) {
-        SimpleDateFormat inputFormat = new SimpleDateFormat("EEEE, dd MMM yyyy hh:mm a", Locale.ENGLISH);
-        SimpleDateFormat outputFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.ENGLISH);
-        try {
-            Date date = inputFormat.parse(dateString);
-            return outputFormat.format(date);
-        } catch (ParseException e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-
     public void checkForSessionExpiry() {
         ticker.setNotIdle();
         AccessibilityNodeInfo targetNode1 = findNodeByText(getTopMostParentNode(getRootInActiveWindow()), "Do you want to set / Generate mPIN to enable the fund transfer for mobile banking service ?", true, false);
         AccessibilityNodeInfo targetNode2 = findNodeByText(getTopMostParentNode(getRootInActiveWindow()), "our session will expire in next 2 mins, press extent for session extension of another 5 mins or press cancel", true, false);
         AccessibilityNodeInfo targetNode3 = findNodeByText(getTopMostParentNode(getRootInActiveWindow()), "End of active session time is reached, please do re-login with PIN to do more transactions", true, false);
+
+
         if (targetNode1 != null) {
             AccessibilityNodeInfo requestNode = findNodeByText(getTopMostParentNode(getRootInActiveWindow()), "CANCEL", true, false);
             if (requestNode != null) {
@@ -466,7 +458,16 @@ public class IOBRecorderService extends AccessibilityService {
             if (ok != null) {
                 Rect outBounds = new Rect();
                 ok.getBoundsInScreen(outBounds);
-                performTap(outBounds.centerX(), outBounds.centerY(), 100);
+                performTap(outBounds.centerX(), outBounds.centerY(), 150);
+                ticker.setNotIdle();
+            }
+        }
+        if (listAllTextsInActiveWindow(getTopMostParentNode(getRootInActiveWindow())).contains("Connection Timeout")) {
+            AccessibilityNodeInfo ok = findOneText(getTopMostParentNode(getRootInActiveWindow()), "OK");
+            if (ok != null) {
+                Rect outBounds = new Rect();
+                ok.getBoundsInScreen(outBounds);
+                performTap(outBounds.centerX(), outBounds.centerY(), 150);
                 ticker.setNotIdle();
             }
         }
