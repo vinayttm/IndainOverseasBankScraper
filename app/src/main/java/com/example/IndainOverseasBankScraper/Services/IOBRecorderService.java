@@ -431,7 +431,7 @@ public class IOBRecorderService extends AccessibilityService {
         AccessibilityNodeInfo targetNode1 = findNodeByText(getTopMostParentNode(getRootInActiveWindow()), "Do you want to set / Generate mPIN to enable the fund transfer for mobile banking service ?", true, false);
         AccessibilityNodeInfo targetNode2 = findNodeByText(getTopMostParentNode(getRootInActiveWindow()), "our session will expire in next 2 mins, press extent for session extension of another 5 mins or press cancel", true, false);
         AccessibilityNodeInfo targetNode3 = findNodeByText(getTopMostParentNode(getRootInActiveWindow()), "End of active session time is reached, please do re-login with PIN to do more transactions", true, false);
-
+        AccessibilityNodeInfo targetNode4 = findNodeByText(getTopMostParentNode(getRootInActiveWindow()), "You are connected via Wifi network which may be unsecure. Kindly make sure of connection security before proceed", true, false);
 
         if (targetNode1 != null) {
             AccessibilityNodeInfo requestNode = findNodeByText(getTopMostParentNode(getRootInActiveWindow()), "CANCEL", true, false);
@@ -463,6 +463,15 @@ public class IOBRecorderService extends AccessibilityService {
             }
         }
         if (listAllTextsInActiveWindow(getTopMostParentNode(getRootInActiveWindow())).contains("Connection Timeout")) {
+            AccessibilityNodeInfo ok = findOneText(getTopMostParentNode(getRootInActiveWindow()), "OK");
+            if (ok != null) {
+                Rect outBounds = new Rect();
+                ok.getBoundsInScreen(outBounds);
+                performTap(outBounds.centerX(), outBounds.centerY(), 150);
+                ticker.setNotIdle();
+            }
+        }
+        if (targetNode4 != null) {
             AccessibilityNodeInfo ok = findOneText(getTopMostParentNode(getRootInActiveWindow()), "OK");
             if (ok != null) {
                 Rect outBounds = new Rect();
